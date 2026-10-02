@@ -1672,7 +1672,7 @@ datos_base = [
         ],
         "respuesta": "Aumento del riesgo de fracturas de cadera y columna, ya que la aclorhidria crónica impide la absorción de calcio dietético y altera la homeostasis del recambio óseo.",
         "feedback": "Un estómago sin ácido es un estómago que no puede extraer el calcio de los alimentos (lácteos, verduras, carne). En adultos mayores, mantener Omeprazol de forma injustificada por 6 años es condenarlos a tener huesos porosos. Las guías exigen reevaluar a todo paciente con IBP crónico y tratar de hacer un tapering si no hay indicación dura (como Esófago de Barrett o uso crónico de corticoides+AINEs)."
-    }
+    },
 # ==========================================
     # LOTE: AMOXICILINA / ÁC. CLAVULÁNICO (15 VARIACIONES)
     # ==========================================

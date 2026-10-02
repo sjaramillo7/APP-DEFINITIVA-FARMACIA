@@ -67,8 +67,8 @@ datos_vademecum = [
         "uso": "ERGE, Úlcera Péptica, Erradicación H. pylori (coadyuvante pH-dependiente), Profilaxis de úlcera por estrés (solo en UCI).",
         "cinetica": "Requiere administración 30 a 60 minutos ANTES de la comida principal. Cápsula con cubierta entérica obligatoria. Metabolismo hepático potente (sustrato e inhibidor del CYP2C19).",
         "interacciones": "Inhibe la activación del Clopidogrel (CYP2C19). Al subir el pH gástrico, anula la absorción de fármacos dependientes de ácido (Ketoconazol, Atazanavir, Carbonato de Calcio, Hierro). RAMs crónicas: Hipomagnesemia, déficit de B12 y riesgo de infección por C. difficile."
-    }
-{
+    },
+    {
         "familia": "Antimicrobianos",
         "nombre": "Amoxicilina / Ácido Clavulánico (Comp. 500/125mg, 875/125mg)",
         "mecanismo": "Asociación sinérgica. La Amoxicilina inhibe las PBP (frena síntesis de pared celular). El Ácido Clavulánico es un inhibidor 'suicida' de betalactamasas; se sacrifica uniéndose irreversiblemente a la enzima bacteriana, protegiendo a la Amoxicilina de la destrucción.",
@@ -76,12 +76,12 @@ datos_vademecum = [
         "cinetica": "Cinética tiempo-dependiente (T > CIM). Ambos se absorben bien vía oral. El clavulánico tiene intensa excreción hepato-renal y su acúmulo causa toxicidad gastrointestinal.",
         "interacciones": "Acenocumarol/Warfarina (destruye flora productora de Vitamina K, disparando el INR y riesgo de sangrado). Metotrexato (compite en secreción tubular, causando toxicidad). RAM: Diarrea severa (efecto directo del clavulánico) y Hepatitis colestásica idiosincrática."
     },
-{
+    {
         "familia": "Sistema Nervioso Central (SNC)",
         "nombre": "Tramadol (Cápsula 50mg, Gotas 100mg/mL)",
         "mecanismo": "Analgésico central de acción dual. 1) Agonista débil del receptor opioide Mu (μ). 2) Inhibidor de la recaptación de Serotonina y Noradrenalina (IRSN) en las vías descendentes del dolor en la médula espinal.",
         "uso": "Dolor moderado a severo (Escalón 2 de la OMS). Dolor neuropático y osteoarticular resistente a AINEs.",
         "cinetica": "Es un PROFÁRMACO. Requiere metabolismo hepático por el citocromo CYP2D6 para convertirse en O-desmetiltramadol (Metabolito M1), el cual es 6 veces más potente en el receptor opioide.",
         "interacciones": "Contraindicado con ISRS (Sertralina, Fluoxetina) por riesgo mortal de Síndrome Serotoninérgico. Fármacos inhibidores del CYP2D6 (Bupropión, Fluoxetina) bloquean su conversión al metabolito activo, dejando al paciente sin analgesia. Baja el umbral convulsivo."
-    },
+    }
 ]
