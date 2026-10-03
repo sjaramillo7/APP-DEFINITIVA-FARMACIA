@@ -1,6 +1,7 @@
 import streamlit as st
 import random
 import pandas as pd
+import time
 
 # Configuración de página ancha y título
 st.set_page_config(page_title="Simulador QF Élite", page_icon="⚕️", layout="wide")
@@ -18,7 +19,7 @@ except Exception as e:
     st.error(f"🚨 ALERTA QF: Error al leer 'vademecum.py'. Detalles: {e}")
     datos_vademecum = []
 
-# --- CSS PERSONALIZADO (PREGUNTADOS / GAMER STYLE) ---
+# --- CSS AVANZADO (RESPONSIVE, WORD-WRAP Y COLORES) ---
 st.markdown("""
 <style>
     .stApp { background-color: #f0f2f6; font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif; }
@@ -29,15 +30,8 @@ st.markdown("""
     .card-menu { background-color: white; border-radius: 15px; padding: 25px; box-shadow: 0 10px 20px rgba(0,0,0,0.05); text-align: center; border-top: 6px solid #2980B9; height: 100%; transition: transform 0.3s ease; }
     .card-menu:hover { transform: translateY(-5px); }
     .card-menu h3 { color: #2980B9; margin-top: 0; font-weight: 800;}
-    .card-menu-warning { border-top: 6px solid #E67E22; }
-    .card-menu-warning h5 { color: #E67E22; margin-top: 0; font-weight: 700; }
-    .card-menu-danger { border-top: 6px solid #C0392B; }
-    .card-menu-danger h3 { color: #C0392B; margin-top: 0; font-weight: 800;}
-    .card-menu-success { border-top: 6px solid #27AE60; }
-    .card-menu-success h3 { color: #27AE60; margin-top: 0; font-weight: 800;}
-    .card-menu-dark { border-top: 6px solid #34495E; }
     
-    /* PREGUNTADOS STYLE - TARJETA DE PREGUNTA */
+    /* Tarjeta de Pregunta (Gigante y Centrada) */
     .quiz-question {
         background-color: #ffffff;
         padding: 40px 30px;
@@ -47,34 +41,54 @@ st.markdown("""
         font-weight: 700;
         color: #2C3E50;
         text-align: center;
-        margin-top: 20px;
+        margin-top: 10px;
         margin-bottom: 40px;
-        border-bottom: 6px solid #D5D8DC;
-        line-height: 1.4;
+        border-bottom: 6px solid #3498DB;
+        line-height: 1.5;
     }
     
-    /* BOTONES DE OPCIONES (GRILLA 2x2) */
-    div.stButton > button { 
-        background-color: #ffffff; 
-        color: #34495E; 
-        border-radius: 15px; 
-        font-weight: bold; 
-        font-size: 16px;
-        border: 2px solid #E5E7E9; 
-        padding: 20px 10px; 
-        width: 100%; 
+    /* HACK CSS PARA QUE EL TEXTO DE LOS BOTONES NUNCA SE CORTE */
+    div[data-testid="stButton"] button {
+        height: auto !important;
+        min-height: 120px !important;
+        padding: 20px !important;
+        background-color: #ffffff;
+        border: 2px solid #D5D8DC;
+        border-radius: 15px;
         transition: all 0.2s ease-in-out;
         box-shadow: 0 4px 6px rgba(0,0,0,0.02);
-        white-space: normal;
-        height: 100%;
-        min-height: 100px;
     }
-    div.stButton > button:hover { 
+    div[data-testid="stButton"] button:hover {
         background-color: #EBF5FB; 
-        color: #2980B9; 
         border-color: #3498DB;
         transform: translateY(-3px); 
         box-shadow: 0 6px 15px rgba(52, 152, 219, 0.3); 
+    }
+    div[data-testid="stButton"] button p {
+        font-size: 1.1rem !important;
+        font-weight: 600 !important;
+        color: #34495E !important;
+        white-space: normal !important; /* Fuerza el salto de línea */
+        word-wrap: break-word !important;
+        line-height: 1.4 !important;
+    }
+    
+    /* Botones de acción del menú (más chicos) */
+    .btn-accion-primaria div[data-testid="stButton"] button {
+        min-height: 50px !important;
+        background-color: #2E4053 !important;
+        border: none !important;
+    }
+    .btn-accion-primaria div[data-testid="stButton"] button p {
+        color: white !important;
+    }
+    .btn-accion-primaria div[data-testid="stButton"] button:hover {
+        background-color: #1ABC9C !important;
+    }
+    
+    /* Paneles de Puntuación (Score) */
+    .score-board {
+        background-color: #27AE60; color: white; padding: 10px; border-radius: 10px; text-align: center; font-weight: bold; font-size: 1.2rem;
     }
 </style>
 """, unsafe_allow_html=True)
@@ -86,14 +100,18 @@ if 'modo_juego' not in st.session_state:
     st.session_state.modo_juego = "Examen Nacional"
 if 'filtro_seleccionado' not in st.session_state:
     st.session_state.filtro_seleccionado = "Todas"
+if 'puntaje' not in st.session_state:
+    st.session_state.puntaje = 0
 
-# Función de enrutamiento
+# Función de enrutamiento limpio (Resetea el juego)
 def ir_a(pagina, modo="Examen Nacional", filtro="Todas"):
     st.session_state.pagina_actual = pagina
     st.session_state.modo_juego = modo
     st.session_state.filtro_seleccionado = filtro
-    if pagina == "Simulador" and 'preguntas' in st.session_state:
-        del st.session_state['preguntas']
+    if pagina == "Simulador":
+        if 'preguntas' in st.session_state: del st.session_state['preguntas']
+        st.session_state.puntaje = 0 # Resetea el puntaje al iniciar un nuevo modo
+        if 'start_time' in st.session_state: del st.session_state['start_time']
     st.rerun()
 
 # Extraer listas únicas de la base de datos
@@ -110,16 +128,22 @@ with st.sidebar:
     st.markdown("## ⚙️ Base QF Élite")
     
     if st.session_state.pagina_actual != "Inicio":
+        st.markdown('<div class="btn-accion-primaria">', unsafe_allow_html=True)
         if st.button("🏠 Volver al Menú Principal", use_container_width=True):
             ir_a("Inicio")
+        st.markdown('</div>', unsafe_allow_html=True)
             
     st.markdown("---")
     
     if st.session_state.pagina_actual == "Simulador" and 'vidas' in st.session_state:
-        st.metric("Vidas Restantes ❤️", st.session_state.vidas)
+        # Panel de métricas GAMER
+        c_vida, c_puntos = st.columns(2)
+        c_vida.metric("Vidas ❤️", st.session_state.vidas)
+        c_puntos.metric("Score 🏆", st.session_state.puntaje)
+        
         if 'preguntas' in st.session_state and len(st.session_state.preguntas) > 0:
             progreso = st.session_state.indice / len(st.session_state.preguntas)
-            st.progress(progreso, text=f"Casos: {st.session_state.indice}/{len(st.session_state.preguntas)}")
+            st.progress(progreso, text=f"Progreso: Caso {st.session_state.indice}/{len(st.session_state.preguntas)}")
 
 # ==========================================
 # PÁGINA 1: MENÚ DE INICIO
@@ -131,38 +155,25 @@ if st.session_state.pagina_actual == "Inicio":
     st.markdown("### ⚔️ Modos de Simulación")
     c1, c2 = st.columns(2)
     with c1:
-        st.markdown('<div class="card-menu card-menu-danger"><h3>🌪️ SUPERVIVENCIA</h3><p>Examen aleatorizado. Todas las familias y categorías mezcladas. Caos total de urgencia.</p></div>', unsafe_allow_html=True)
+        st.markdown('<div class="card-menu" style="border-top: 6px solid #C0392B;"><h3>🌪️ SUPERVIVENCIA</h3><p>Examen aleatorizado con reloj. Todas las familias y categorías mezcladas. Caos de urgencia.</p></div>', unsafe_allow_html=True)
         st.write("") 
+        st.markdown('<div class="btn-accion-primaria">', unsafe_allow_html=True)
         if st.button("🚀 INICIAR SUPERVIVENCIA", use_container_width=True):
             ir_a("Simulador", "Examen Nacional")
+        st.markdown('</div>', unsafe_allow_html=True)
             
     with c2:
-        st.markdown('<div class="card-menu card-menu-success"><h3>💊 ESPECIALIDAD</h3><p>Filtra tu entrenamiento por una familia farmacológica en específico (Ej: AINEs).</p></div>', unsafe_allow_html=True)
+        st.markdown('<div class="card-menu" style="border-top: 6px solid #27AE60;"><h3>💊 ESPECIALIDAD</h3><p>Filtra tu entrenamiento por una familia farmacológica en específico.</p></div>', unsafe_allow_html=True)
         familia_sel = st.selectbox("Familia Farmacológica:", familias, label_visibility="collapsed")
+        st.markdown('<div class="btn-accion-primaria">', unsafe_allow_html=True)
         if st.button("🔬 ENTRENAR FAMILIA", use_container_width=True):
             ir_a("Simulador", "Por Familia", familia_sel)
+        st.markdown('</div>', unsafe_allow_html=True)
 
     st.markdown("<br>", unsafe_allow_html=True)
-    
-    st.markdown("### 🎯 Entrenamiento Aislado por Módulos")
-    m1, m2, m3, m4 = st.columns(4)
-    with m1:
-        st.markdown('<div class="card-menu card-menu-warning"><h5>⚙️️ Mecanismo</h5></div>', unsafe_allow_html=True)
-        if st.button("Entrenar Mecanismo", use_container_width=True): ir_a("Simulador", "Por Categoría", "⚙️ Mecanismo")
-    with m2:
-        st.markdown('<div class="card-menu card-menu-warning"><h5>🔄 Interacciones</h5></div>', unsafe_allow_html=True)
-        if st.button("Entrenar Interacc.", use_container_width=True): ir_a("Simulador", "Por Categoría", "🔄 Interacciones")
-    with m3:
-        st.markdown('<div class="card-menu card-menu-warning"><h5>⚠️ RAMs</h5></div>', unsafe_allow_html=True)
-        if st.button("Entrenar RAMs", use_container_width=True): ir_a("Simulador", "Por Categoría", "⚠️ RAMs")
-    with m4:
-        st.markdown('<div class="card-menu card-menu-warning"><h5>🏥 Casos Clínicos</h5></div>', unsafe_allow_html=True)
-        if st.button("Entrenar Casos", use_container_width=True): ir_a("Simulador", "Por Categoría", "🏥 Caso Clínico")
-
-    st.markdown("<br>", unsafe_allow_html=True)
-
     st.markdown("### 🛠️ Herramientas Clínicas")
     h1, h2 = st.columns(2)
+    st.markdown('<div class="btn-accion-primaria">', unsafe_allow_html=True)
     with h1:
         st.markdown('<div class="card-menu card-menu-dark"><h3>📚 VADEMÉCUM</h3><p>Estudia los perfiles clínicos, cinética, y RAMs antes del turno.</p></div>', unsafe_allow_html=True)
         st.write("")
@@ -171,15 +182,20 @@ if st.session_state.pagina_actual == "Inicio":
         st.markdown('<div class="card-menu card-menu-dark"><h3>📊 VISOR DE DATOS</h3><p>Analiza los Excels crudos de la red MINSAL directamente aquí.</p></div>', unsafe_allow_html=True)
         st.write("")
         if st.button("Cargar Arsenales", use_container_width=True): ir_a("Visor")
+    st.markdown('</div>', unsafe_allow_html=True)
 
 # ==========================================
 # PÁGINA 2: SIMULADOR DE JUEGO (STYLE PREGUNTADOS)
 # ==========================================
 elif st.session_state.pagina_actual == "Simulador":
-    st.header(f"🎮 Turno: {st.session_state.modo_juego}")
-    st.caption(f"Filtro Activo: **{st.session_state.filtro_seleccionado}**")
+    
+    # Cabecera de status
+    col_t, col_s = st.columns([3, 1])
+    col_t.header(f"🎮 Turno: {st.session_state.modo_juego}")
+    col_s.markdown(f"<div class='score-board'>SCORE: {st.session_state.puntaje}</div>", unsafe_allow_html=True)
     st.markdown("---")
     
+    # Cargar base de datos según selección
     if 'preguntas' not in st.session_state:
         if st.session_state.modo_juego == "Por Familia":
             st.session_state.preguntas = [p for p in datos_base if p.get("familia") == st.session_state.filtro_seleccionado]
@@ -190,9 +206,8 @@ elif st.session_state.pagina_actual == "Simulador":
             
         if st.session_state.preguntas:
             random.shuffle(st.session_state.preguntas)
-            # Shuffle options for each question to avoid predictable patterns
             for p in st.session_state.preguntas:
-                random.shuffle(p['opciones'])
+                random.shuffle(p['opciones']) # Randomize opciones
         st.session_state.indice = 0
         st.session_state.vidas = 3
         st.session_state.respondido = False
@@ -204,63 +219,84 @@ elif st.session_state.pagina_actual == "Simulador":
     elif en_juego and st.session_state.indice < len(st.session_state.preguntas):
         p_actual = st.session_state.preguntas[st.session_state.indice]
         
-        # Ocultar "Variación X: " de la vista del usuario
+        # INICIO DEL TIMER: Captura el tiempo exacto en que se muestra la pregunta
+        if 'start_time' not in st.session_state:
+            st.session_state.start_time = time.time()
+        
+        # Limpieza automática del texto "Variación X: "
         texto_pregunta = p_actual['pregunta']
         if "Variación" in texto_pregunta and ":" in texto_pregunta:
             texto_pregunta = texto_pregunta.split(":", 1)[1].strip()
             
-        st.markdown(f"<h4 style='text-align: center; color: #7F8C8D;'>🏷️ {p_actual.get('categoria', 'Clínica')} | {p_actual.get('familia', 'N/A')}</h4>", unsafe_allow_html=True)
+        st.markdown(f"<h4 style='text-align: center; color: #7F8C8D;'>⏱️ Tienes 60s | 🏷️️ {p_actual.get('categoria', 'Clínica')} | {p_actual.get('familia', 'N/A')}</h4>", unsafe_allow_html=True)
         
         # TARJETA GIGANTE
         st.markdown(f'<div class="quiz-question">{texto_pregunta}</div>', unsafe_allow_html=True)
         
         opciones = p_actual['opciones']
         
-        # Callback para registrar respuesta instantánea
+        # Callback para registrar respuesta instantánea y calcular Puntaje
         def procesar_respuesta(opcion_seleccionada):
             st.session_state.respondido = True
             st.session_state.opcion_elegida = opcion_seleccionada
+            
+            # CÁLCULO DE TIEMPO Y PUNTAJE
+            tiempo_tomado = time.time() - st.session_state.start_time
+            st.session_state.ultimo_tiempo = round(tiempo_tomado, 1)
+            
             if opcion_seleccionada == st.session_state.preguntas[st.session_state.indice]['respuesta']:
                 st.session_state.es_correcta = True
+                # Algoritmo de Score: 500 base + Bono de velocidad (Max 500, decae en 60s)
+                if tiempo_tomado < 60:
+                    bono = int(500 * (1 - (tiempo_tomado / 60)))
+                else:
+                    bono = 0
+                st.session_state.ultimo_puntaje = 500 + bono
+                st.session_state.puntaje += st.session_state.ultimo_puntaje
             else:
                 st.session_state.es_correcta = False
                 st.session_state.vidas -= 1
+                st.session_state.ultimo_puntaje = 0
 
-        # GRILLA 2x2 DE BOTONES
+        # GRILLA 2x2 DE BOTONES RESPONSIVOS
         if not st.session_state.get('respondido'):
             col1, col2 = st.columns(2)
             with col1:
                 st.button(opciones[0], key=f"op0_{st.session_state.indice}", on_click=procesar_respuesta, args=(opciones[0],), use_container_width=True)
-                st.write("") # Espaciador
                 st.button(opciones[2], key=f"op2_{st.session_state.indice}", on_click=procesar_respuesta, args=(opciones[2],), use_container_width=True)
             with col2:
                 st.button(opciones[1], key=f"op1_{st.session_state.indice}", on_click=procesar_respuesta, args=(opciones[1],), use_container_width=True)
-                st.write("") # Espaciador
                 st.button(opciones[3], key=f"op3_{st.session_state.indice}", on_click=procesar_respuesta, args=(opciones[3],), use_container_width=True)
 
-        # RESOLUCIÓN Y FEEDBACK
+        # RESOLUCIÓN, FEEDBACK Y TIMER
         if st.session_state.get('respondido'):
+            t_tomado = st.session_state.get('ultimo_tiempo', 0)
+            p_ganados = st.session_state.get('ultimo_puntaje', 0)
+            
             if st.session_state.es_correcta:
-                st.success("🎯 **¡EXCELENTE! Intervención clínica correcta.**")
+                st.success(f"🎯 **¡EXCELENTE!** | ⏱️ Tiempo: {t_tomado}s | 📈 +{p_ganados} Puntos")
             else:
-                st.error(f"❌ **ERROR CRÍTICO.** Elegiste: *{st.session_state.opcion_elegida}*")
+                st.error(f"❌ **ERROR CRÍTICO.** | Elegiste: *{st.session_state.opcion_elegida}* | 📉 0 Puntos")
                 
             st.info(f"**💡 Resolución QF:** {st.session_state.preguntas[st.session_state.indice]['feedback']}")
             
-            texto_boton = "Avanzar al Siguiente Caso ➡️" if st.session_state.vidas > 0 else "Ver Reporte de Fatalidad 💀"
+            texto_boton = "Siguiente Caso Clínico ➡️" if st.session_state.vidas > 0 else "Ver Reporte de Fatalidad 💀"
             
+            st.markdown('<div class="btn-accion-primaria">', unsafe_allow_html=True)
             _, col_centro, _ = st.columns([1, 2, 1])
             with col_centro:
                 if st.button(texto_boton, use_container_width=True):
                     st.session_state.indice += 1
                     st.session_state.respondido = False
+                    del st.session_state['start_time'] # Resetea el reloj para la próxima
                     st.rerun()
+            st.markdown('</div>', unsafe_allow_html=True)
                 
     elif st.session_state.get('vidas', 0) <= 0:
-        st.error("💥 Has perdido todas tus vidas. Los pacientes se han descompensado.")
+        st.error(f"💥 **GAME OVER.** Has perdido todas tus vidas. Pacientes en riesgo severo. \n\n🏆 **SCORE FINAL:** {st.session_state.puntaje} puntos.")
     elif st.session_state.get('indice', 0) >= len(st.session_state.preguntas):
         st.balloons()
-        st.success("🏆 ¡Turno terminado con éxito! Eres un QF Élite comprobado.")
+        st.success(f"🏆 **¡TURNO TERMINADO CON ÉXITO!** Eres un QF Élite comprobado.\n\n🌟 **SCORE FINAL:** {st.session_state.puntaje} puntos.")
 
 # ==========================================
 # PÁGINA 3: VADEMÉCUM
@@ -294,7 +330,7 @@ elif st.session_state.pagina_actual == "Vademecum":
 # ==========================================
 elif st.session_state.pagina_actual == "Visor":
     st.header("📊 Explorador de Arsenales (Excels)")
-    st.markdown("Sube tus archivos de red pública aquí para analizarlos.")
+    st.markdown("Sube tus archivos de red pública aquí para analizarlos sin depender de rutas locales.")
     archivos_subidos = st.file_uploader("Sube Excels (APS, HCHM):", type=["xls", "xlsx"], accept_multiple_files=True)
     
     if archivos_subidos:
